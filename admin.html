@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azwell Admin</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI',Arial,sans-serif; background:#f2f5f7; color:#1a2e38; }
+
+/* ── Login ── */
+.login-wrap { display:flex; min-height:100vh; align-items:center; justify-content:center; }
+.login-card { background:#fff; padding:36px; border-radius:14px; width:380px;
+  box-shadow:0 8px 32px rgba(20,40,80,.12); }
+.login-card h1 { font-size:24px; margin-bottom:6px; color:#1a6e8a; }
+.login-card p  { color:#666; font-size:13px; margin-bottom:24px; }
+
+label { display:block; font-size:12px; font-weight:700; color:#555; margin-top:14px; margin-bottom:6px; }
+input, select, textarea { width:100%; padding:10px 14px; border:1.5px solid #ddd;
+  border-radius:8px; font-size:14px; font-family:inherit; outline:none; }
+input:focus, select:focus, textarea:focus { border-color:#1a9eab; }
+
+.btn { background:linear-gradient(135deg,#1a6e8a,#1aaba0); color:#fff; border:none;
+  padding:11px 22px; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; font-family:inherit; }
+.btn:hover { filter:brightness(1.07); }
+.btn-sm { padding:6px 12px; font-size:12px; }
+.btn-danger  { background:#d04444; }
+.btn-success { background:#1a9e5a; }
+.btn-ghost   { background:#fff; color:#1a6e8a; border:1.5px solid #1a9eab; }
+.err { background:#fde8e8; color:#b00020; padding:10px; border-radius:6px;
+  font-size:13px; margin-top:14px; display:none; }
+
+/* ── Layout ── */
+.topbar { background:#1a3540; color:#fff; padding:14px 28px;
+  display:flex; align-items:center; justify-content:space-between; }
+.topbar .logo { font-size:18px; font-weight:800; }
+.topbar .logo span { color:#1aaba0; }
+.topbar .user { font-size:13px; opacity:.85; }
+.topbar .user a { color:#fff; margin-left:14px; text-decoration:underline; cursor:pointer; }
+
+.tabs { background:#fff; padding:0 28px; display:flex; gap:4px; border-bottom:2px solid #e0e6ea; }
+.tabs button { background:none; border:none; padding:14px 22px; font-size:14px; font-weight:700;
+  color:#666; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; font-family:inherit; }
+.tabs button.active { color:#1a6e8a; border-bottom-color:#1aaba0; }
+
+.main { padding:24px 28px; max-width:1300px; margin:0 auto; }
+
+/* ── Stats ── */
+.stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:16px; margin-bottom:24px; }
+.stat-card { background:#fff; padding:18px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.stat-card .label { font-size:11px; color:#888; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+.stat-card .value { font-size:26px; font-weight:800; color:#1a3540; margin-top:6px; }
+
+/* ── Tables ── */
+.panel { background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.panel h2 { font-size:18px; margin-bottom:14px; color:#1a3540; display:flex; justify-content:space-between; align-items:center; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th, td { text-align:left; padding:10px 8px; border-bottom:1px solid #eee; }
+th { color:#888; font-weight:700; font-size:11px; text-transform:uppercase; }
+tr:hover td { background:#f9fafb; }
+.muted { color:#999; font-size:11px; }
+.badge { display:inline-block; padding:3px 10px; border-radius:50px; font-size:11px; font-weight:700; }
+.badge.pending    { background:#fff5e1; color:#a06b00; }
+.badge.confirmed  { background:#e1efff; color:#1a4f8a; }
+.badge.shipped    { background:#e6f4f1; color:#1a8a72; }
+.badge.delivered  { background:#e7f6ed; color:#1a7a3e; }
+.badge.cancelled  { background:#fde8e8; color:#b00020; }
+.badge.admin      { background:#1aaba0; color:#fff; }
+
+.items-list { font-size:12px; color:#555; }
+.items-list .item { padding:2px 0; }
+
+/* ── Modal ── */
+.modal-overlay { position:fixed; inset:0; background:rgba(10,20,30,.55); z-index:100;
+  display:none; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+.modal-overlay.open { display:flex; }
+.modal { background:#fff; border-radius:14px; padding:28px; width:92%; max-width:520px;
+  max-height:90vh; overflow-y:auto; position:relative; }
+.modal h2 { margin-bottom:16px; }
+.modal .cls { position:absolute; top:12px; right:18px; background:none; border:none;
+  font-size:22px; cursor:pointer; color:#888; }
+.row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.actions { display:flex; gap:8px; }
+
+@media (max-width:640px) { .row { grid-template-columns:1fr; } }
+</style>
+<link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+
+<!-- LOGIN VIEW -->
+<div id="loginView" class="login-wrap">
+  <div class="login-card">
+    <h1>🛡️ Azwell <span style="color:#1aaba0">Admin</span></h1>
+    <p>Админ хэрэглэгчээр нэвтэрнэ үү.</p>
+    <form id="loginForm">
+      <label>Имэйл эсвэл утас</label>
+      <input name="identifier" type="text" required placeholder="admin@az.mn">
+      <label>Нууц үг</label>
+      <input name="password" type="password" required>
+      <div id="loginTotpRow" style="display:none;">
+        <label>🔐 2FA код (Google Authenticator)</label>
+        <input name="totp" type="text" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" style="letter-spacing:8px;text-align:center;font-size:18px;font-weight:700;">
+      </div>
+      <div class="err" id="loginErr"></div>
+      <button class="btn" type="submit" style="width:100%;margin-top:18px;">Нэвтрэх</button>
+    </form>
+    <p class="muted" style="margin-top:16px;font-size:11px;text-align:center;">
+      Хамгийн анх бүртгүүлсэн хэрэглэгч авто-admin болно.
+    </p>
+  </div>
+</div>
+
+<!-- ADMIN VIEW -->
+<div id="adminView" style="display:none;">
+  <div class="topbar">
+    <div class="logo">Azwell<span>Admin</span></div>
+    <div class="user">
+      <span id="userInfo"></span>
+      <a id="logoutBtn">Гарах</a>
+    </div>
+  </div>
+  <div class="tabs">
+    <button data-tab="dashboard" class="active">📊 Хяналт &amp; Тайлан</button>
+    <button data-tab="orders">📦 Захиалга</button>
+    <button data-tab="products">🛒 Бүтээгдэхүүн</button>
+    <button data-tab="users">👥 Хэрэглэгчид</button>
+    <button data-tab="coupons">🎟️ Купон</button>
+  </div>
+
+  <div class="main">
+    <!-- DASHBOARD + REPORTS (merged) -->
+    <div id="tab-dashboard" class="tab-content">
+      <!-- Main stats grid -->
+      <div class="stats" id="statsGrid" style="margin-bottom:18px;"></div>
+
+      <!-- Reports summary -->
+      <div class="stats" id="reportSummary" style="margin-bottom:24px;"></div>
+
+      <!-- Sales chart -->
+      <div class="panel" style="margin-bottom:18px;">
+        <h2 style="flex-wrap:wrap;gap:8px;">
+          <span>📈 Борлуулалтын график</span>
+          <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <select id="reportPeriod" style="font-size:13px;padding:6px 10px;">
+              <option value="day">Өдрөөр</option>
+              <option value="week" selected>Долоо хоногоор</option>
+              <option value="month">Сараар</option>
+            </select>
+            <select id="reportDays" style="font-size:13px;padding:6px 10px;">
+              <option value="7">7 хоног</option>
+              <option value="30" selected>30 хоног</option>
+              <option value="90">90 хоног</option>
+              <option value="365">1 жил</option>
+            </select>
+            <button class="btn btn-sm" id="downloadReportBtn" title="Бүх тайланг CSV форматаар татах" style="padding:6px 14px;font-size:12px;">📁 Тайлан татах</button>
+          </span>
+        </h2>
+        <div id="reportChart">Уншиж байна...</div>
+      </div>
+
+      <!-- Top products + Top brands -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+        <div class="panel">
+          <h2>🏆 Шилдэг бүтээгдэхүүн</h2>
+          <div id="reportTopProducts">Уншиж байна...</div>
+        </div>
+        <div class="panel">
+          <h2>🏷️ Шилдэг брэнд</h2>
+          <div id="reportTopBrands">Уншиж байна...</div>
+        </div>
+      </div>
+
+      <!-- Recent orders -->
+      <div class="panel">
+        <h2>📦 Сүүлийн захиалгууд</h2>
+        <div id="recentOrders">Уншиж байна...</div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div id="tab-orders" class="tab-content" style="display:none;">
+      <div class="panel">
+        <h2 style="flex-wrap:wrap;gap:8px;">
+          <span>📦 Захиалгууд</span>
+          <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-weight:400;font-size:12px;">
+            <select id="orderStatusFilter" style="font-size:13px;padding:6px 10px;">
+              <option value="">Бүх төлөв</option>
+              <option value="pending">⏳ Хүлээгдэж байгаа</option>
+              <option value="confirmed">✅ Баталгаажсан</option>
+              <option value="shipped">🚚 Хүргэлтэнд</option>
+              <option value="delivered">📬 Хүргэгдсэн</option>
+              <option value="cancelled">❌ Цуцлагдсан</option>
+            </select>
+            <button class="btn btn-sm btn-ghost" data-quick-date="today"  style="padding:5px 10px;font-size:11px;">Өнөөдөр</button>
+            <button class="btn btn-sm btn-ghost" data-quick-date="week"   style="padding:5px 10px;font-size:11px;">7 хоног</button>
+            <button class="btn btn-sm btn-ghost" data-quick-date="month"  style="padding:5px 10px;font-size:11px;">30 хоног</button>
+            <input type="date" id="orderDateFrom" style="font-size:12px;padding:5px 8px;" title="Эхлэх огноо">
+            <span>—</span>
+            <input type="date" id="orderDateTo"   style="font-size:12px;padding:5px 8px;" title="Дуусах огноо">
+            <button class="btn btn-sm btn-ghost" id="orderClearDate" title="Огноог цэвэрлэх" style="padding:5px 10px;font-size:11px;">✕</button>
+            <button class="btn btn-sm" id="exportOrdersBtn" title="CSV форматаар татах" style="padding:5px 10px;font-size:11px;">📁 CSV</button>
+          </span>
+        </h2>
+        <div id="ordersTable">Уншиж байна...</div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="tab-products" class="tab-content" style="display:none;">
+      <div class="panel">
+        <h2 style="flex-wrap:wrap;gap:8px;">
+          <span>🛒 Бүтээгдэхүүн</span>
+          <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="productSearch" placeholder="🔍 Хайх (нэр, брэнд)..." style="font-size:13px;padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;min-width:240px;outline:none;">
+            <select id="productBrandFilter" style="font-size:13px;padding:7px 10px;">
+              <option value="">Бүх брэнд</option>
+            </select>
+            <select id="productActiveFilter" style="font-size:13px;padding:7px 10px;">
+              <option value="">Бүгд</option>
+              <option value="active">✓ Идэвхтэй</option>
+              <option value="inactive">✗ Идэвхгүй</option>
+            </select>
+            <button class="btn btn-sm" id="addProductBtn">+ Шинэ бүтээгдэхүүн</button>
+          </span>
+        </h2>
+        <div id="productsTable">Уншиж байна...</div>
+      </div>
+    </div>
+
+    <!-- COUPONS -->
+    <div id="tab-coupons" class="tab-content" style="display:none;">
+      <div class="panel">
+        <h2>
+          🎟️ Купон / Хямдралын код
+          <button class="btn btn-sm" id="addCouponBtn">+ Шинэ купон</button>
+        </h2>
+        <div id="couponsTable">Уншиж байна...</div>
+      </div>
+    </div>
+
+    <!-- COUPON MODAL -->
+    <div class="modal-overlay" id="couponModal">
+      <div class="modal" style="max-width:480px;">
+        <button class="cls" data-close>✕</button>
+        <h2 id="couponModalTitle">Шинэ купон</h2>
+        <form id="couponForm">
+          <input type="hidden" name="id">
+          <label>Код *</label>
+          <input name="code" required placeholder="AZWELL10" style="text-transform:uppercase;">
+          <label>Тайлбар</label>
+          <input name="description" placeholder="ж.нь: Шинэ хэрэглэгчид 10% off">
+          <div class="row">
+            <div>
+              <label>Хямдралын төрөл</label>
+              <select name="discount_type">
+                <option value="percent">Хувиар (%)</option>
+                <option value="fixed">Дүнгээр (₮)</option>
+              </select>
+            </div>
+            <div>
+              <label>Хэмжээ *</label>
+              <input name="discount_value" type="number" required min="1">
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>Хамгийн бага захиалга (₮)</label>
+              <input name="min_order" type="number" min="0" value="0">
+            </div>
+            <div>
+              <label>Хэрэглэх дээд тоо (0 = хязгааргүй)</label>
+              <input name="max_uses" type="number" min="0" value="0">
+            </div>
+          </div>
+          <label>Хүчин төгөлдөр хүртэл (нэмэлт)</label>
+          <input name="expires_at" type="date">
+          <label style="display:flex;align-items:center;gap:8px;margin-top:14px;">
+            <input type="checkbox" name="active" checked style="width:auto;"> Идэвхтэй
+          </label>
+          <div class="err" id="couponErr"></div>
+          <div class="actions" style="margin-top:18px;">
+            <button class="btn" type="submit">Хадгалах</button>
+            <button class="btn btn-ghost" type="button" data-close>Болих</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div id="tab-users" class="tab-content" style="display:none;">
+      <div class="panel">
+        <h2>👥 Хэрэглэгчид</h2>
+        <div id="usersTable">Уншиж байна...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT EDIT MODAL -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <button class="cls" data-close>✕</button>
+    <h2 id="productModalTitle">Бүтээгдэхүүн</h2>
+    <form id="productForm">
+      <input type="hidden" name="id">
+      <div class="row">
+        <div>
+          <label>Брэнд *</label>
+          <div style="display:flex; gap:6px;">
+            <select name="brand" id="brandSelect" required style="flex:1;">
+              <!-- options loaded dynamically -->
+            </select>
+            <button type="button" class="btn btn-sm btn-ghost" id="newBrandBtn" title="Шинэ брэнд нэмэх" style="padding:6px 10px;">+</button>
+            <button type="button" class="btn btn-sm btn-ghost" id="manageBrandBtn" title="Брэнд удирдах" style="padding:6px 10px;">⚙️</button>
+          </div>
+        </div>
+        <div>
+          <label>Класс (2 үсэг)</label>
+          <input name="class" placeholder="dw, gh, ps..." maxlength="3">
+        </div>
+      </div>
+      <label>Нэр *</label>
+      <input name="name" required>
+      <label>Дэд секц <span style="font-weight:400;color:#888;font-size:11px;">(нүүр хуудасны аль хэсэгт харагдах)</span></label>
+      <div style="display:flex; gap:6px; align-items:stretch;">
+        <input name="section" id="sectionInput" list="sectionsList" placeholder="🔍 Сонгох эсвэл шинээр бичих..." style="flex:1;" autocomplete="off">
+        <datalist id="sectionsList"><!-- options loaded dynamically --></datalist>
+        <button type="button" class="btn btn-sm btn-ghost" id="clearSectionBtn" title="Цэвэрлэх" style="padding:6px 10px;">✕</button>
+      </div>
+      <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;" id="sectionPresets">
+        <button type="button" class="section-preset" data-section="🔥 Хямдарсан бараанууд SALE">🔥 Хямдрал</button>
+        <button type="button" class="section-preset" data-section="🆕 Шинэ бүтээгдэхүүн">🆕 Шинэ</button>
+        <button type="button" class="section-preset" data-section="⭐ Хит борлуулалт">⭐ Хит</button>
+        <button type="button" class="section-preset" data-section="💎 Шилдэг сонголт">💎 Шилдэг</button>
+        <button type="button" class="section-preset" data-section="🎁 Бэлэг">🎁 Бэлэг</button>
+      </div>
+      <style>
+        .section-preset {
+          padding:5px 11px; border-radius:14px;
+          border:1.5px solid #d0d8de; background:#f8fafb;
+          font-size:11px; font-weight:600; color:#0a2e40;
+          cursor:pointer; transition:all .2s;
+        }
+        .section-preset:hover {
+          background:#1aaba0; color:#fff; border-color:#1aaba0;
+          transform:translateY(-1px);
+        }
+        .section-preset.active {
+          background:linear-gradient(135deg,#1aaba0,#1a6e8a);
+          color:#fff; border-color:transparent;
+          box-shadow:0 3px 10px rgba(26,171,160,.3);
+        }
+      </style>
+      <div class="row">
+        <div>
+          <label>Үнэ ₮ *</label>
+          <input name="price" type="number" required min="0">
+        </div>
+        <div>
+          <label>Хуучин үнэ ₮ (хямдрал)</label>
+          <input name="old_price" type="number" min="0">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Категори</label>
+          <div style="display:flex; gap:6px;">
+            <select name="category" id="categorySelect" style="flex:1;">
+              <option value="">-- сонгох --</option>
+              <!-- options loaded dynamically -->
+            </select>
+            <button type="button" class="btn btn-sm btn-ghost" id="newCategoryBtn" title="Шинэ категори нэмэх" style="padding:6px 10px;">+</button>
+            <button type="button" class="btn btn-sm btn-ghost" id="manageCategoryBtn" title="Категори удирдах" style="padding:6px 10px;">⚙️</button>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <label>Эможи</label>
+          <input name="emoji" id="emojiInput" maxlength="4" placeholder="🔍 Эможи хайх эсвэл сонгох (жнь: тархи, energy)" style="font-size:14px;" autocomplete="off">
+          <div id="emojiPicker" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:50; background:#fff; border:1px solid #d0d8de; border-radius:8px; box-shadow:0 8px 24px rgba(20,40,80,.15); max-height:240px; overflow-y:auto; padding:8px;"></div>
+        </div>
+      </div>
+      <label>Зураг</label>
+      <div style="display:flex; gap:12px; align-items:flex-start;">
+        <div id="imgPreview" style="width:72px;height:72px;border:1.5px dashed #ccc;border-radius:8px;display:flex;align-items:center;justify-content:center;background:#fafafa;font-size:26px;color:#bbb;flex-shrink:0;overflow:hidden;">📷</div>
+        <div style="flex:1; min-width:0;">
+          <input id="imgFile" type="file" accept="image/*" style="font-size:12px; width:100%;">
+          <div id="imgStatus" style="font-size:11px;color:#888;margin-top:5px;">Зураг сонгоход автоматаар upload хийгдэнэ</div>
+          <input name="image_path" type="text" placeholder="эсвэл зурагны зам бичих" style="margin-top:6px; font-size:12px;">
+        </div>
+      </div>
+      <label>Тайлбар</label>
+      <textarea name="description" rows="2"></textarea>
+      <div class="row">
+        <div>
+          <label>Үлдэгдэл</label>
+          <input name="stock" type="number" min="0" value="100">
+        </div>
+        <div>
+          <label>Дараалал</label>
+          <input name="sort_order" type="number" value="0">
+        </div>
+      </div>
+
+      <!-- VARIANTS — олон төрөл сонгох -->
+      <div style="margin-top:22px; padding:14px; background:#f8fafb; border-radius:10px; border:1px solid #e0e8ec;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0;">
+          <input type="checkbox" id="variantsEnable" style="width:auto;">
+          <span style="font-weight:700; font-size:13px; color:#0a2e40;">🎨 Олон төрөл нэмэх (Хэмжээ / Амт / Өнгө)</span>
+        </label>
+        <div id="variantsBody" style="display:none; margin-top:14px;">
+          <div style="margin-bottom:10px;">
+            <label style="font-size:12px; margin-bottom:4px;">Шошго</label>
+            <input type="text" id="variantsLabel" placeholder="ж: Хэмжээ & Амт сонгох" style="font-size:13px;">
+          </div>
+          <div id="variantsList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px;"></div>
+          <button type="button" id="addVariantBtn" style="padding:8px 16px; background:linear-gradient(135deg,#1aaba0,#1a6e8a); color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:13px;">+ Төрөл нэмэх</button>
+          <div style="font-size:11px; color:#888; margin-top:8px;">💡 Жишээ: Chocolate 10lbs, Vanilla 10lbs, Strawberry 2lb г.м</div>
+        </div>
+      </div>
+      <style>
+        .variant-row { display:grid; grid-template-columns: 1fr 50px 48px 1fr 70px 32px; gap:8px; align-items:center; padding:8px; background:#fff; border-radius:8px; border:1px solid #e0e8ec; }
+        .variant-row input { font-size:12px; padding:6px 9px; margin:0; }
+        .variant-row input[type="color"] { padding:0; width:42px; height:32px; border:1px solid #ccc; border-radius:6px; cursor:pointer; }
+        .variant-row .v-thumb { width:42px; height:32px; border:1.5px dashed #ccc; border-radius:6px; background:#fafafa; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; font-size:16px; color:#bbb; }
+        .variant-row .v-thumb img { width:100%; height:100%; object-fit:contain; }
+        .variant-row .v-thumb:hover { border-color:#1aaba0; background:#f0fafa; }
+        .variant-row .v-file { display:none; }
+        .variant-row .del-btn { background:#fee; color:#c00; border:1px solid #fcc; border-radius:6px; cursor:pointer; padding:5px 8px; font-weight:700; }
+        .variant-row .del-btn:hover { background:#fcc; }
+      </style>
+
+           <label style="display:flex;align-items:center;gap:8px;margin-top:18px;">
+        <input type="checkbox" name="active" checked style="width:auto;">
+        Идэвхтэй
+      </label>
+      <div class="err" id="productErr"></div>
+      <div class="actions" style="margin-top:18px;">
+        <button class="btn" type="submit">Хадгалах</button>
+        <button class="btn btn-ghost" type="button" data-close>Болих</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- BRAND MANAGE MODAL -->
+<div class="modal-overlay" id="brandManageModal">
+  <div class="modal" style="max-width:560px;">
+    <button class="cls" data-close>✕</button>
+    <h2>🏷️ Брэнд удирдах</h2>
+    <p class="muted" style="margin-bottom:14px;font-size:12px;">
+      Брэндийг устгахын тулд тэр брэндийн бүх бүтээгдэхүүнийг өөр брэнд рүү шилжүүлэх эсвэл устгасан байх ёстой.
+    </p>
+    <div id="brandManageList">Уншиж байна...</div>
+    <div class="actions" style="margin-top:18px;">
+      <button class="btn btn-ghost" type="button" data-close>Хаах</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORY MANAGE MODAL -->
+<div class="modal-overlay" id="categoryManageModal">
+  <div class="modal" style="max-width:520px;">
+    <button class="cls" data-close>✕</button>
+    <h2>📂 Категори удирдах</h2>
+    <p class="muted" style="margin-bottom:14px;font-size:12px;">
+      Категорийг устгахад тухайн категориор тэмдэглэгдсэн бүтээгдэхүүнүүдийн категори талбар хоосорно. Бүтээгдэхүүн өөрөө устгагдахгүй.
+    </p>
+    <div id="categoryManageList">Уншиж байна...</div>
+    <div class="actions" style="margin-top:18px;">
+      <button class="btn btn-ghost" type="button" data-close>Хаах</button>
+    </div>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

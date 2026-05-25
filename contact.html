@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Холбоо барих — Azwell.mn</title>
+<link rel="stylesheet" href="legal.css">
+</head>
+<body>
+<header class="legal-hdr">
+  <a href="/" class="logo-link">← azwell.mn</a>
+  <nav>
+    <a href="/terms.html">Үйлчилгээний нөхцөл</a>
+    <a href="/privacy.html">Нууцлалын бодлого</a>
+    <a href="/refund.html">Буцаалт</a>
+    <a href="/contact.html" class="active">Холбоо барих</a>
+  </nav>
+</header>
+
+<main class="legal-content">
+  <h1>📞 Холбоо барих</h1>
+
+  <div class="contact-grid">
+    <div class="contact-card">
+      <div class="icon">📞</div>
+      <h3>Утас</h3>
+      <p><a href="tel:+97697003939"><strong>9700-3939</strong></a></p>
+      <p class="muted">Даваа-Баасан 09:00-18:00</p>
+    </div>
+
+    <div class="contact-card">
+      <div class="icon">📧</div>
+      <h3>Имэйл</h3>
+      <p><a href="mailto:info@azwell.mn">info@azwell.mn</a></p>
+      <p class="muted">24 цагт хариу өгнө</p>
+    </div>
+
+    <div class="contact-card">
+      <div class="icon">📍</div>
+      <h3>Хаяг</h3>
+      <p>БГД, 3-р хороо<br>Дунд голын гудамж<br>Монгол 99 төв 401 тоот</p>
+    </div>
+
+    <div class="contact-card">
+      <div class="icon">💬</div>
+      <h3>Facebook</h3>
+      <p><a href="https://facebook.com/azwell.mn" target="_blank">facebook.com/azwell.mn</a></p>
+      <p class="muted">Мессеж бичих</p>
+    </div>
+  </div>
+
+  <h2>📩 Бидэнд бичих</h2>
+  <form id="contactForm" style="max-width:600px;">
+    <label>Таны нэр *</label>
+    <input name="name" type="text" required>
+    <label>Имэйл</label>
+    <input name="email" type="email">
+    <label>Утас *</label>
+    <input name="phone" type="tel" required>
+    <label>Сэдэв *</label>
+    <select name="subject" required>
+      <option value="">-- сонгох --</option>
+      <option value="order">Захиалгын асуудал</option>
+      <option value="product">Бүтээгдэхүүний асуулт</option>
+      <option value="refund">Буцаалт / Солилцоо</option>
+      <option value="partnership">Хамтран ажиллах</option>
+      <option value="other">Бусад</option>
+    </select>
+    <label>Зурвас *</label>
+    <textarea name="message" rows="5" required></textarea>
+    <div id="contactErr" class="err" style="display:none;"></div>
+    <div id="contactOk"  class="ok"  style="display:none;background:#e7f6ed;color:#1a7a3e;padding:10px;border-radius:6px;margin-top:14px;font-size:13px;"></div>
+    <button class="btn-submit" type="submit">📤 Зурвас илгээх</button>
+  </form>
+
+  <h2>❓ Түгээмэл асуулт</h2>
+
+  <details class="faq">
+    <summary>Хэдийд хүргэлт хийдэг вэ?</summary>
+    <p>Улаанбаатар хотод 24-48 цагт, орон нутагт 3-7 хоногт хүргэдэг. Захиалгыг ажлын өдрүүдэд хүлээн авч боловсруулна.</p>
+  </details>
+
+  <details class="faq">
+    <summary>Хүргэлтийн зардал хэд вэ?</summary>
+    <p>Улаанбаатар дотор 4,000-6,000₮, орон нутагт 15,000-25,000₮. 150,000₮-аас дээш захиалгад үнэгүй.</p>
+  </details>
+
+  <details class="faq">
+    <summary>Барааг хэрхэн төлөх вэ?</summary>
+    <p>QPay банкны аппликейшнээр, эсвэл хүргэлтийн үед бэлэн мөнгөөр.</p>
+  </details>
+
+  <details class="faq">
+    <summary>Бүтээгдэхүүн гэмтэлтэй ирвэл яах вэ?</summary>
+    <p>24 цагийн дотор 9700-3939 руу залгаарай. Бид үнэгүй сольж эсвэл бүрэн мөнгийг буцаана.</p>
+  </details>
+
+  <details class="faq">
+    <summary>Бүтээгдэхүүн жинхэнэ үү?</summary>
+    <p>Бүх бүтээгдэхүүн нь импорт хийгчийн албан ёсны баталгаатай, жинхэнэ бараа.</p>
+  </details>
+
+  <details class="faq">
+    <summary>Хэрэглээний зөвлөгөө хаанаас авах вэ?</summary>
+    <p>Бүтээгдэхүүний хайрцган дээр болон веб дээрх дэлгэрэнгүй мэдээллийг харна уу. Эсвэл бидний эмзүйчтэй ярилцана.</p>
+  </details>
+</main>
+
+<footer class="legal-footer">
+  © 2026 Azwell.mn — Бүх эрх хуулиар хамгаалагдсан
+</footer>
+
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e){
+  e.preventDefault();
+  var err = document.getElementById('contactErr');
+  var ok  = document.getElementById('contactOk');
+  err.style.display = 'none';
+  ok.style.display  = 'none';
+  // For now just show success (could POST to /api/contact later)
+  ok.textContent = '✅ Таны мессеж амжилттай илгээгдлээ! Бид удахгүй хариу өгнө.';
+  ok.style.display = 'block';
+  e.target.reset();
+});
+</script>
+</body>
+</html>

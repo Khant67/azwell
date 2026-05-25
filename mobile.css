@@ -1,0 +1,237 @@
+/* ============================================================================
+ * Azwellness.mn — Mobile improvements (phones up to ~640px)
+ * ========================================================================== */
+
+/* === Smooth scroll & better touch === */
+* { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+html { scroll-behavior: smooth; }
+body { -webkit-font-smoothing: antialiased; }
+
+/* ============================================================================
+   PHONES (≤ 640px)
+   ========================================================================== */
+@media (max-width: 640px) {
+
+  
+
+
+
+
+  /* === Top bar === */
+  .hdr {
+    flex-wrap: wrap;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+  }
+  .logo {
+    font-size: 30px !important;
+    flex: 0 0 auto;
+    order: 1;
+  }
+  .logo img {
+    height: 40px !important;
+    transform: scale(2) !important;
+    transform-origin: left center !important;
+    margin-right: 30px !important;
+  }
+  .hdr-btns {
+    order: 2;
+    gap: 6px !important;
+    margin-left: auto;
+  }
+  .searchbox {
+    order: 3;
+    flex: 1 1 100% !important;
+    border-radius: 9px !important;
+  }
+  .searchbox input {
+    padding: 9px 10px !important;
+    font-size: 14px !important;
+    min-width: 0;
+  }
+  .searchbox button { padding: 9px 14px !important; }
+
+  /* Hide register button on mobile (login still visible) */
+  .btn-reg { display: none !important; }
+  .btn-login { padding: 6px 10px !important; font-size: 12px !important; }
+  .cart-ico { font-size: 20px !important; }
+
+  /* === Top promo strip === */
+  .topbar { font-size: 11px !important; padding: 5px 8px !important; }
+
+  /* === Brand section banners — fit phone width nicely === */
+  .brand-section > div:first-child {
+    height: auto !important;
+    margin-top: 14px !important;
+    margin-bottom: 18px !important;
+    border-radius: 12px !important;
+  }
+  .brand-section > div:first-child img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* === Brand strip — 3x2 grid with bigger touch targets === */
+  .brand-strip-wrap { margin: 18px 0 14px !important; }
+  .brand-strip {
+    border-radius: 12px !important;
+    flex-wrap: wrap !important;
+  }
+  .brand-strip-cell {
+    flex: 0 0 33.333% !important;
+    height: 70px !important;
+    padding: 8px 6px !important;
+  }
+  .brand-strip-cell:nth-child(3n) { border-right: none !important; }
+  .brand-strip-cell:nth-child(-n+3) { border-bottom: 1px solid rgba(0,0,0,.07); }
+  .brand-strip-cell:nth-child(n+4) { border-bottom: none !important; }
+  .bs-icon { transform: scale(.85); }
+
+  
+
+  /* === Section headers === */
+  .sec-hdr {
+    padding: 10px 4px !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .sec-hdr h3 { font-size: 14px !important; line-height: 1.3; }
+  .sec-hdr a { font-size: 12px !important; }
+
+  /* === Preview title (after brand-collapse changes) === */
+  .preview-title h3 { font-size: 15px !important; }
+  .preview-title .all-link { font-size: 11px !important; }
+
+  /* === Product grid — 2 columns on mobile === */
+  .pgrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .brand-section.collapsed .preview-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* === Product cards smaller but readable === */
+  .pcard { border-radius: 10px !important; }
+  .pimg { height: 90px !important; }
+  .pbody { padding: 8px 10px 10px !important; }
+  .pbrand { font-size: 9px !important; }
+  .pname { font-size: 12px !important; line-height: 1.25 !important; }
+  .pcat  { font-size: 10px !important; }
+  .pprice { font-size: 14px !important; }
+  .poldp { font-size: 10px !important; }
+  .padd {
+    padding: 7px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+  }
+  .pbadge {
+    font-size: 10px !important;
+    padding: 2px 7px !important;
+    top: 6px !important;
+    left: 6px !important;
+  }
+
+  /* === View-all button === */
+  .view-all-btn {
+    padding: 11px 22px !important;
+    font-size: 13px !important;
+  }
+
+  /* === Cart sidebar — full screen on mobile === */
+  .csidebar { width: 100% !important; max-width: 100% !important; }
+  .chdr { padding: 14px 16px !important; }
+  .chdr h3 { font-size: 16px !important; }
+  .citems { padding: 0 16px !important; }
+  .cftr { padding: 14px 16px !important; }
+
+  /* === Modals — full screen on mobile === */
+  .az-modal-overlay .az-modal,
+  .pdmodal {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    padding: 22px 18px !important;
+    overflow-y: auto;
+  }
+  .pdmodal-body { flex-direction: column !important; padding: 16px !important; }
+  .pdmodal-img { width: 100% !important; height: 280px !important; flex: none !important; }
+
+  /* === Search dropdown row — slimmer === */
+  .search-dd .sdd-row { padding: 10px 12px !important; gap: 10px !important; }
+  .search-dd .sdd-row .img { width: 48px !important; height: 48px !important; flex-basis: 48px !important; }
+  .search-dd .sdd-row .info .name { font-size: 12px !important; }
+  .search-dd .sdd-row .price { font-size: 13px !important; }
+
+  /* === Footer — single column === */
+  footer > div {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+    text-align: center;
+    padding: 24px 16px !important;
+  }
+  footer { padding: 24px 12px 16px !important; }
+
+  /* === Back bar (brand detail view) === */
+  .back-bar { padding: 0 12px !important; margin-top: 12px !important; }
+  .back-btn { font-size: 13px !important; padding: 8px 16px !important; }
+
+  /* === Admin panel === */
+  .topbar { padding: 12px 16px !important; }
+  .tabs { padding: 0 8px !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tabs button {
+    padding: 12px 14px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .main { padding: 16px 12px !important; }
+  .panel { padding: 14px !important; border-radius: 10px !important; }
+  .panel h2 { font-size: 15px !important; flex-wrap: wrap; gap: 8px; }
+
+  /* Admin tables — horizontal scroll instead of wrapping */
+  .panel table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 11px !important;
+  }
+  .panel th, .panel td { padding: 6px 4px !important; white-space: nowrap; }
+
+  /* Admin stats cards — 2 per row */
+  .stats { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+  .stat-card { padding: 12px !important; }
+  .stat-card .value { font-size: 19px !important; }
+
+  /* === Touch-friendly tap targets === */
+  button, a, input, select {
+    min-height: 36px;
+    touch-action: manipulation;
+  }
+}
+
+/* ============================================================================
+   SMALL TABLETS / LARGE PHONES (641px – 900px)
+   ========================================================================== */
+@media (min-width: 641px) and (max-width: 900px) {
+  .pgrid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 14px !important;
+  }
+  .brand-section.collapsed .preview-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  .brand-strip-cell { flex: 0 0 33.333% !important; height: 80px !important; }
+  .brand-strip-cell:nth-child(3n) { border-right: none !important; }
+
+  .stats { grid-template-columns: repeat(3, 1fr) !important; }
+
+  /* Top search bar narrower */
+  .searchbox input { font-size: 13px !important; }
+}
