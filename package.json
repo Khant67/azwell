@@ -1,0 +1,204 @@
+// Email notifications using nodemailer + Gmail SMTP.
+//
+// Configuration (env vars or .env file in backend/):
+//   SMTP_HOST     = smtp.gmail.com          (default)
+//   SMTP_PORT     = 587                     (default)
+//   SMTP_USER     = your-email@gmail.com    (Gmail account that sends)
+//   SMTP_PASS     = app password            (16-char Gmail App Password)
+//   ADMIN_EMAIL   = where-to-notify@x.mn    (your business email — receives notifications)
+//   FROM_NAME     = "Azwellness.mn"         (display name)
+//
+// If SMTP_USER + SMTP_PASS are not set, mailer silently does nothing (orders still work).
+
+const fs   = require('fs');
+const path = require('path');
+
+// Tiny .env parser (no extra dep needed)
+function loadEnv(file) {
+  if (!fs.existsSync(file)) return;
+  fs.readFileSync(file, 'utf8').split(/\r?\n/).forEach(line => {
+    if (!line.trim() || line.startsWith('#')) return;
+    const idx = line.indexOf('=');
+    if (idx < 0) return;
+    const k = line.slice(0, idx).trim();
+    let   v = line.slice(idx + 1).trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+    if (process.env[k] === undefined) process.env[k] = v;
+  });
+}
+loadEnv(path.join(__dirname, '.env'));
+
+let nodemailer = null;
+try { nodemailer = require('nodemailer'); } catch (_) {}
+
+let transporter = null;
+let enabled = false;
+
+function init() {
+  if (!nodemailer) {
+    console.warn('[mailer] nodemailer not installed — emails disabled (run: npm install nodemailer)');
+    return;
+  }
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) {
+    console.warn('[mailer] SMTP_USER/SMTP_PASS not set — emails disabled');
+    return;
+  }
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: false,
+    auth: { user, pass }
+  });
+  enabled = true;
+  console.log('[mailer] ready — sending from', user);
+}
+init();
+
+function fromAddr() {
+  const name = process.env.FROM_NAME || 'Azwellness.mn';
+  return `"${name}" <${process.env.SMTP_USER}>`;
+}
+
+function fmtItems(items) {
+  return items.map(it =>
+    `  • ${it.brand} — ${it.name || it.product_name} ×${it.quantity}   ${(it.price * it.quantity).toLocaleString()}₮`
+  ).join('\n');
+}
+
+function htmlItems(items) {
+  return items.map(it =>
+    `<tr>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;">${it.brand}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;">${it.name || it.product_name}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center;">×${it.quantity}</td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;font-weight:600;">${(it.price * it.quantity).toLocaleString()}₮</td>
+    </tr>`
+  ).join('');
+}
+
+// Send to admin when new order arrives
+async function notifyAdmin(order) {
+  if (!enabled) return { sent: false, reason: 'disabled' };
+  const to = process.env.ADMIN_EMAIL;
+  if (!to) { console.warn('[mailer] ADMIN_EMAIL not set'); return { sent: false, reason: 'no_admin_email' }; }
+
+  const subject = `🛒 Шинэ захиалга #${order.id} — ${order.total.toLocaleString()}₮`;
+  const text = `Шинэ захиалга ирлээ!\n\n` +
+    `Захиалгын дугаар: #${order.id}\n` +
+    `Захиалагч: ${order.customer_name}\n` +
+    `Утас: ${order.customer_phone}\n` +
+    `Хаяг: ${order.customer_address}\n` +
+    (order.notes ? `Тэмдэглэл: ${order.notes}\n` : '') +
+    `\nБараа:\n${fmtItems(order.items)}\n\n` +
+    `Нийт дүн: ${order.total.toLocaleString()}₮\n\n` +
+    `Захиалгын панелаас удирдах: http://localhost:3000/admin.html`;
+
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;">
+      <div style="background:linear-gradient(135deg,#1a6e8a,#1aaba0);color:#fff;padding:24px;border-radius:12px 12px 0 0;">
+        <h1 style="margin:0;font-size:22px;">🛒 Шинэ захиалга</h1>
+        <p style="margin:6px 0 0;opacity:.9;">#${order.id} · ${order.total.toLocaleString()}₮</p>
+      </div>
+      <div style="background:#fff;border:1px solid #eee;border-top:none;padding:24px;border-radius:0 0 12px 12px;">
+        <h3 style="margin:0 0 10px;font-size:14px;color:#1a3540;">Захиалагч</h3>
+        <p style="margin:0;font-size:14px;line-height:1.7;">
+          <strong>${order.customer_name}</strong><br>
+          📞 ${order.customer_phone}<br>
+          📍 ${order.customer_address}
+          ${order.notes ? '<br>📝 ' + order.notes : ''}
+        </p>
+        <h3 style="margin:20px 0 10px;font-size:14px;color:#1a3540;">Бараа</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="background:#f5f9fa;">
+            <th style="padding:8px 10px;text-align:left;">Брэнд</th>
+            <th style="padding:8px 10px;text-align:left;">Нэр</th>
+            <th style="padding:8px 10px;text-align:center;">Тоо</th>
+            <th style="padding:8px 10px;text-align:right;">Дүн</th>
+          </tr></thead>
+          <tbody>${htmlItems(order.items)}</tbody>
+          <tfoot><tr>
+            <td colspan="3" style="padding:14px 10px;text-align:right;font-weight:700;font-size:15px;">Нийт:</td>
+            <td style="padding:14px 10px;text-align:right;font-weight:800;color:#1a6e8a;font-size:16px;">${order.total.toLocaleString()}₮</td>
+          </tr></tfoot>
+        </table>
+        <p style="margin:24px 0 0;text-align:center;">
+          <a href="http://localhost:3000/admin.html" style="background:#1a9eab;color:#fff;padding:10px 24px;text-decoration:none;border-radius:8px;font-weight:700;">Admin панель нээх</a>
+        </p>
+      </div>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({ from: fromAddr(), to, subject, text, html });
+    console.log(`[mailer] Admin notified about order #${order.id} → ${to}`);
+    return { sent: true };
+  } catch (e) {
+    console.error('[mailer] admin notify failed:', e.message);
+    return { sent: false, reason: e.message };
+  }
+}
+
+// Send to customer (confirmation)
+async function notifyCustomer(order, customerEmail) {
+  if (!enabled) return { sent: false, reason: 'disabled' };
+  if (!customerEmail) return { sent: false, reason: 'no_customer_email' };
+
+  const subject = `✓ Таны захиалга #${order.id} баталгаажлаа`;
+  const text = `Сайн байна уу ${order.customer_name},\n\n` +
+    `Azwellness.mn-д захиалга өгсөнд баярлалаа!\n\n` +
+    `Захиалгын дугаар: #${order.id}\n` +
+    `Нийт дүн: ${order.total.toLocaleString()}₮\n` +
+    `Хүргэлтийн хаяг: ${order.customer_address}\n\n` +
+    `Бараа:\n${fmtItems(order.items)}\n\n` +
+    `Та удахгүй холбогдох болно.\n` +
+    `Asуулт байвал ☎️7288-0000 руу залгаарай.\n\n` +
+    `Azwellness.mn`;
+
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;">
+      <div style="background:linear-gradient(135deg,#1a7a3e,#2dab5e);color:#fff;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
+        <h1 style="margin:0;font-size:24px;">✓ Захиалга баталгаажлаа!</h1>
+        <p style="margin:8px 0 0;font-size:14px;opacity:.95;">#${order.id}</p>
+      </div>
+      <div style="background:#fff;border:1px solid #eee;border-top:none;padding:24px;border-radius:0 0 12px 12px;">
+        <p style="font-size:14px;line-height:1.6;">
+          Сайн байна уу <strong>${order.customer_name}</strong>,<br><br>
+          <strong>Azwellness.mn</strong>-д захиалга өгсөнд баярлалаа! Бид удахгүй <strong>${order.customer_phone}</strong> дугаараар тантай холбогдох болно.
+        </p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin:20px 0;">
+          <thead><tr style="background:#f5f9fa;">
+            <th style="padding:8px 10px;text-align:left;">Бараа</th>
+            <th style="padding:8px 10px;text-align:center;">Тоо</th>
+            <th style="padding:8px 10px;text-align:right;">Дүн</th>
+          </tr></thead>
+          <tbody>${htmlItems(order.items)}</tbody>
+          <tfoot><tr>
+            <td colspan="2" style="padding:14px 10px;text-align:right;font-weight:700;">Нийт:</td>
+            <td style="padding:14px 10px;text-align:right;font-weight:800;color:#1a7a3e;font-size:16px;">${order.total.toLocaleString()}₮</td>
+          </tr></tfoot>
+        </table>
+        <p style="font-size:13px;color:#666;margin:0;text-align:center;">
+          📞 Холбоо барих: <strong>7288-0000</strong><br>
+          🚚 Хүргэлт: ${order.customer_address}
+        </p>
+      </div>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({ from: fromAddr(), to: customerEmail, subject, text, html });
+    console.log(`[mailer] Customer confirmation sent → ${customerEmail}`);
+    return { sent: true };
+  } catch (e) {
+    console.error('[mailer] customer notify failed:', e.message);
+    return { sent: false, reason: e.message };
+  }
+}
+
+module.exports = {
+  enabled: () => enabled,
+  notifyAdmin,
+  notifyCustomer
+};
