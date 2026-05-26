@@ -2,7 +2,7 @@
 // Idempotent — re-running clears existing products and re-imports.
 const fs   = require('fs');
 const path = require('path');
-const db   = require('../db');
+const db   = require('./db');
 
 const HTML = fs.readFileSync(
   path.join(__dirname, '..', '..', 'site', 'index.html'),
@@ -23,7 +23,7 @@ const BRAND_MARKERS = [
   { id: 'musashi',        start: HTML.indexOf('id="musashi"') },
 ].sort((a,b) => a.start - b.start);
 
-function brandFor(offset) {
+function brandFor(offset) {h
   let cur = null;
   for (const m of BRAND_MARKERS) {
     if (m.start >= 0 && m.start <= offset) cur = m.id;
