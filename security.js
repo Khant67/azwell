@@ -1,34 +1,61 @@
-// One-shot script: create or fix admin user with known password
-// Usage: node scripts/make-admin.js
-const bcrypt = require('bcryptjs');
-const db     = require('../db');
+// Security headers middleware — replaces helmet without npm dependency.
+//
+// Sets standard security headers to mitigate common web vulnerabilities:
+//   • Clickjacking (X-Frame-Options)
+//   • MIME sniffing (X-Content-Type-Options)
+//   • XSS (X-XSS-Protection, CSP)
+//   • Information leakage (Referrer-Policy)
+//   • Forced HTTPS (HSTS - only in production)
+//   • Permissions / Feature Policy
 
-const EMAIL    = 'admin@az.mn';
-const PASSWORD = 'admin123';
-const NAME     = 'Admin';
+function securityHeaders(opts = {}) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const enableCSP    = opts.enableCSP !== false; // default true
 
-const hash = bcrypt.hashSync(PASSWORD, 10);
+  return function (req, res, next) {
+    // Prevent embedding of this site in iframes from other origins (clickjacking)
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
-const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(EMAIL);
+    // Prevent browsers from MIME-sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
 
-if (existing) {
-  db.prepare('UPDATE users SET password_hash = ?, is_admin = 1 WHERE email = ?')
-    .run(hash, EMAIL);
-  console.log('\n✅ Updated existing user');
-} else {
-  db.prepare(
-    'INSERT INTO users (email, password_hash, name, is_admin) VALUES (?, ?, ?, 1)'
-  ).run(EMAIL, hash, NAME);
-  console.log('\n✅ Created new admin user');
+    // Legacy XSS protection (modern browsers ignore this, but harmless)
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+
+    // Referrer policy — don't leak full URL to other origins
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // Permissions Policy — disable powerful features we don't use
+    res.setHeader('Permissions-Policy',
+      'geolocation=(), microphone=(), camera=(), payment=(self), usb=(), magnetometer=(), gyroscope=()');
+
+    // Force HTTPS for 1 year (only in production)
+    if (isProduction) {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+
+    // Hide tech stack
+    res.removeHeader('X-Powered-By');
+
+    // Content Security Policy — restricts what resources can load
+    if (enableCSP) {
+      const csp = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob: https:",
+        "media-src 'self'",
+        "connect-src 'self' https:",
+        "frame-ancestors 'self'",
+        "base-uri 'self'",
+        "form-action 'self'"
+      ].join('; ');
+      res.setHeader('Content-Security-Policy', csp);
+    }
+
+    next();
+  };
 }
 
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('   Имэйл:    ' + EMAIL);
-console.log('   Нууц үг:  ' + PASSWORD);
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('\nОдоо http://localhost:3000/admin.html ор\n');
-
-// Show all users to confirm
-const all = db.prepare('SELECT id, email, is_admin FROM users').all();
-console.log('Бүх хэрэглэгчид:');
-all.forEach(u => console.log('  #' + u.id, u.email, '(admin:', u.is_admin === 1 ? 'тийм' : 'үгүй', ')'));
+module.exports = securityHeaders;

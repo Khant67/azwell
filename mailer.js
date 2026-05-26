@@ -1,81 +1,122 @@
-# 📧 Имэйл мэдэгдэл тохируулах заавар
+// Email notifications using nodemailer + Gmail SMTP.
+//
+// Configuration (env vars or .env file):
+//   SMTP_HOST     = smtp.gmail.com         (default)
+//   SMTP_PORT     = 587                    (default)
+//   SMTP_USER     = your-email@gmail.com   (Gmail account that sends)
+//   SMTP_PASS     = app password           (16-char Gmail App Password)
+//   ADMIN_EMAIL   = where-to-notify@x.mn   (your business email)
+//   FROM_NAME     = "Azwellness.mn"        (display name)
 
-Захиалга үүсэхэд автоматаар:
-- 🛒 **Танд (admin) мэдэгдэл** очно — шинэ захиалгын дэлгэрэнгүй
-- ✓ **Хэрэглэгчид баталгаа** — захиалга баталгаажсан гэсэн захидал (хэрэв хэрэглэгч имэйл оруулсан бол)
+const fs = require('fs');
+const path = require('path');
 
-## 🔑 Gmail App Password үүсгэх
+function loadEnv(file) {
+  if (!fs.existsSync(file)) return;
+  fs.readFileSync(file, 'utf8').split(/\r?\n/).forEach(line => {
+    if (!line.trim() || line.startsWith('#')) return;
+    const idx = line.indexOf('=');
+    if (idx < 0) return;
+    const k = line.slice(0, idx).trim();
+    let v = line.slice(idx + 1).trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+      v = v.slice(1, -1);
+    }
+    if (process.env[k] === undefined) process.env[k] = v;
+  });
+}
+loadEnv(path.join(__dirname, '.env'));
 
-Gmail-ийн энгийн нууц үг ажиллахгүй — заавал App Password үүсгэх ёстой.
+let nodemailer = null;
+try { nodemailer = require('nodemailer'); } catch (_) {}
 
-1. Google акаунтад нэвтэрнэ: https://myaccount.google.com/
-2. **Аюулгүй байдал** (Security) → **2-Step Verification** идэвхжүүлэх (хэрэв идэвхгүй бол)
-3. https://myaccount.google.com/apppasswords руу очно
-4. "Аппын нэр" дотор **Azwell** гэж бичнэ → **Үүсгэх** дарна
-5. Гарч ирэх **16 тэмдэгт** код-г хуулна (жишээ: `abcd efgh ijkl mnop`)
-6. Хооронд нь хийсэн зайг авч `abcdefghijklmnop` хэлбэртэй болгоно
+let transporter = null;
+let enabled = false;
 
-## ⚙️ Тохиргоо хадгалах
+function init() {
+  if (!nodemailer) {
+    console.warn('[mailer] nodemailer not installed — emails disabled');
+    return;
+  }
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) {
+    console.warn('[mailer] SMTP_USER/SMTP_PASS not set — emails disabled');
+    return;
+  }
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: false,
+    auth: { user, pass }
+  });
+  enabled = true;
+  console.log('[mailer] ready — sending from', user);
+}
+init();
 
-`~/azwell/backend/` хавтсанд **`.env`** файл үүсгээд дараах байдлаар бичнэ:
+function fromAddr() {
+  const name = process.env.FROM_NAME || 'Azwellness.mn';
+  return `"${name}" <${process.env.SMTP_USER}>`;
+}
 
-```env
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=abcdefghijklmnop
-ADMIN_EMAIL=khantconstructionllc@gmail.com
-FROM_NAME=Azwellness.mn
-```
+function fmtItems(items) {
+  return items.map(it =>
+    `  - ${it.brand} - ${it.name || it.product_name} x${it.quantity}    ${(it.price * it.quantity).toLocaleString()} MNT`
+  ).join('\n');
+}
 
-- `SMTP_USER` — таны Gmail хаяг (имэйл явуулдаг хаяг)
-- `SMTP_PASS` — App Password (16 тэмдэгт, зай агүй)
-- `ADMIN_EMAIL` — захиалгын мэдэгдэл хүлээж авах хаяг
-- `FROM_NAME` — захидлын "Хэнээс" хэсэгт харагдах нэр
+async function notifyAdmin(order) {
+  if (!enabled) return { sent: false, reason: 'disabled' };
+  const to = process.env.ADMIN_EMAIL;
+  if (!to) return { sent: false, reason: 'no_admin_email' };
 
-## 🧪 Туршилт
+  const subject = 'Shine zahialga #' + order.id + ' - ' + order.total.toLocaleString() + ' MNT';
+  const text = 'Shine zahialga irlee!\n\n' +
+    'Zahialgyn dugaar: #' + order.id + '\n' +
+    'Zahialagch: ' + order.customer_name + '\n' +
+    'Utas: ' + order.customer_phone + '\n' +
+    'Hayag: ' + order.customer_address + '\n' +
+    (order.notes ? 'Temdeglel: ' + order.notes + '\n' : '') +
+    '\nBaraa:\n' + fmtItems(order.items) + '\n\n' +
+    'Niit dun: ' + order.total.toLocaleString() + ' MNT\n';
 
-Серверээ дахин асаа:
+  try {
+    await transporter.sendMail({ from: fromAddr(), to, subject, text });
+    console.log('[mailer] Admin notified about order #' + order.id);
+    return { sent: true };
+  } catch (e) {
+    console.error('[mailer] admin notify failed:', e.message);
+    return { sent: false, reason: e.message };
+  }
+}
 
-```bash
-cd ~/azwell/backend
-npm start
-```
+async function notifyCustomer(order, customerEmail) {
+  if (!enabled) return { sent: false, reason: 'disabled' };
+  if (!customerEmail) return { sent: false, reason: 'no_customer_email' };
 
-Дараах мэдэгдэл гарвал зөв тохирсон:
+  const subject = 'Tany zahialga #' + order.id + ' batalgaazhlaa';
+  const text = 'Sain bain uu ' + order.customer_name + ',\n\n' +
+    'Azwellness.mn-d zahialga ogsond bayarlalaa!\n\n' +
+    'Zahialgyn dugaar: #' + order.id + '\n' +
+    'Niit dun: ' + order.total.toLocaleString() + ' MNT\n' +
+    'Hurgelt: ' + order.customer_address + '\n\n' +
+    'Baraa:\n' + fmtItems(order.items) + '\n\n' +
+    'Ta udahgui holbogdoh bolno.\n' +
+    'Azwellness.mn';
 
-```
-[mailer] ready — sending from your-email@gmail.com
-```
+  try {
+    await transporter.sendMail({ from: fromAddr(), to: customerEmail, subject, text });
+    console.log('[mailer] Customer confirmation sent -> ' + customerEmail);
+    return { sent: true };
+  } catch (e) {
+    console.error('[mailer] customer notify failed:', e.message);
+    return { sent: false, reason: e.message };
+  }
+}
 
-Хэрэв `emails disabled` гэвэл .env файл олдоогүй эсвэл утга буруу байна.
-
-## 📩 Захиалга туршаад имэйл хийлгэх
-
-1. `http://localhost:3000/` нээж бараагаа сонгон сагсанд хийнэ
-2. **Захиалга хийх** дарна
-3. Маягтыг бөглөнө — **имэйл талбарт өөрийн имэйл** оруулна (баталгаа авах)
-4. Илгээх → **2 имэйл** ирэх ёстой:
-   - Admin (`ADMIN_EMAIL`) → шинэ захиалгын мэдээлэл
-   - Хэрэглэгч → захиалга баталгаажсан
-
-## 🔧 Алдаа гарвал
-
-- **"Invalid login"** → Gmail App Password буруу. Зай авч, 16 тэмдэгт гүйцэт байгаа эсэхээ шалга.
-- **"Sender address rejected"** → SMTP_USER нь жинхэнэ Gmail хаяг байх ёстой.
-- Имэйл явсан боловч **Spam хавтсанд орох** → энэ нь анхны нийтлэг асуудал. Цаг өнгөрөх тусам Gmail таны хаягийг "найдвартай" гэж бүртгэнэ.
-
-## 🌐 Бусад имэйл үйлчилгээ (Gmail-аас өөр)
-
-`.env` дотор `SMTP_HOST` болон `SMTP_PORT`-ийг солих:
-
-| Үйлчилгээ | SMTP_HOST | SMTP_PORT |
-|---|---|---|
-| Gmail | smtp.gmail.com | 587 |
-| Outlook | smtp.office365.com | 587 |
-| Yahoo | smtp.mail.yahoo.com | 587 |
-| Custom SMTP | таны сервер | 587 эсвэл 465 |
-
-## ⚠️ Production-д
-
-- `.env` файлыг **Git-д хүчлэн нэмж болохгүй** — нууц үг агуулдаг
-- VPS дээр deploy хийхдээ environment variable байдлаар тохируул
-- Том хэмжээгээр имэйл явуулах бол **SendGrid, Mailgun, Amazon SES** зэрэг тусгай үйлчилгээ илүү найдвартай
+module.exports = {
+  enabled: () => enabled,
+  notifyAdmin,
+  notifyCustomer
+};

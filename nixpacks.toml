@@ -1,0 +1,11 @@
+# Railway / Nixpacks configuration
+# Force Node.js 22 (required for built-in node:sqlite module)
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = ["npm install --omit=dev || npm install"]
+
+[start]
+cmd = "node --experimental-sqlite server.js"

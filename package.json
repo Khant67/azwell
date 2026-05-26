@@ -1,27 +1,23 @@
 {
-    "name": "azwell-backend",
-    "version": "0.3.0",
-    "main": "server.js",
-    "type": "commonjs",
-    "scripts": {
-          "start": "node --experimental-sqlite server.js",
-          "dev": "node --experimental-sqlite --watch server.js",
-          "test": "node --experimental-sqlite test.js",
-          "test:admin": "node --experimental-sqlite test-admin.js",
-          "seed": "node --experimental-sqlite scripts/seed-products.js",
-          "make-admin": "node --experimental-sqlite scripts/make-admin.js",
-          "test:stock": "node --experimental-sqlite test-stock.js",
-          "test:search": "node --experimental-sqlite test-search.js",
-          "test:email": "node --experimental-sqlite scripts/test-email.js",
-          "setup:email": "node scripts/setup-email.js"
-    },
-    "engines": {
-          "node": ">=22.5.0"
-    },
-    "dependencies": {
-          "bcryptjs": "^2.4.3",
-          "cors": "^2.8.5",
-          "express": "^4.19.2",
-          "nodemailer": "^6.10.1"
-    }
+  "name": "azwell-backend",
+  "version": "0.3.0",
+  "description": "Azwell e-commerce backend with Express and SQLite",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite --watch server.js",
+    "seed": "node --experimental-sqlite scripts/seed-products.js",
+    "make-admin": "node --experimental-sqlite scripts/make-admin.js",
+    "test:email": "node --experimental-sqlite scripts/test-email.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "nodemailer": "^6.10.1"
+  }
 }

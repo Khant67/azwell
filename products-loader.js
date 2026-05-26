@@ -6,9 +6,10 @@
 (function(){
   'use strict';
 
-  var API = (location.protocol === 'file:' || location.hostname === '')
-    ? 'http://localhost:3000/api'
-    : '/api';
+  var API = window.AZWELL_API_BASE ||
+    ((location.protocol === 'file:' || location.hostname === '')
+      ? 'http://localhost:3000/api'
+      : '/api');
 
   // Map brand id used in API → brand-section element id in DOM
   var BRAND_DOM_ID = {

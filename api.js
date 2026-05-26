@@ -9,11 +9,12 @@
   'use strict';
 
   // ── config ────────────────────────────────────────────────────────────────
-  // When served by Express (backend serves the static site too), API is at /api
-  // When opened directly via file:// or a different port, switch to absolute URL.
-  var API = (location.protocol === 'file:' || location.hostname === '')
-    ? 'http://localhost:3000/api'
-    : '/api';
+  // API URL: config.js файлаас тохиргоог авна (window.AZWELL_API_BASE).
+  // Fallback байгаа (config.js ороогүй бол хуучин логик ажиллана).
+  var API = window.AZWELL_API_BASE ||
+    ((location.protocol === 'file:' || location.hostname === '')
+      ? 'http://localhost:3000/api'
+      : '/api');
 
   var TOKEN_KEY = 'azwell.token';
   var USER_KEY  = 'azwell.user';

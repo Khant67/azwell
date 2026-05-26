@@ -2,7 +2,8 @@
 // Type into the top-bar search input → matching products appear right below.
 (function(){
   'use strict';
-  const API = (location.protocol === 'file:' || location.hostname === '') ? 'http://localhost:3000/api' : '/api';
+  const API = window.AZWELL_API_BASE ||
+    ((location.protocol === 'file:' || location.hostname === '') ? 'http://localhost:3000/api' : '/api');
 
   const css = document.createElement('style');
   css.textContent = `

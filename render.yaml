@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: azwellness
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.11.0
+      - key: PORT
+        value: 3000
+      - key: AZWELL_DB_DIR
+        value: /var/data
+      # The values below MUST be filled in via Render dashboard (Secret):
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: FROM_NAME
+        value: Azwellness.mn
+    disk:
+      name: azwell-data
+      mountPath: /var/data
+      sizeGB: 1
