@@ -5,7 +5,7 @@ const path = require('path');
 const db   = require('./db');
 
 const HTML = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'site', 'index.html'),
+    path.join(__dirname, 'index.html'),
   'utf8'
 );
 
