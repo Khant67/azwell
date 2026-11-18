@@ -26,7 +26,7 @@ const couponsRoute = require('./coupons');
 // ── 🎅 SANTA SALE: зээлийн аппаар төлбөл бүх бараа нэмэлт хөнгөлөлттэй ──
 //   LOAN_PROMO_PERCENT  — хувь (default 10). 0 болговол урамшуулал унтарна.
 //   LOAN_PROMO_UNTIL    — дуусах огноо, жишээ нь 2026-12-31 (заавал биш)
-const LOAN_PROMO_METHODS = ['storepay', 'pocket'];
+const LOAN_PROMO_METHODS = ['storepay', 'pocket', 'toki'];
 const VALID_PAYMENT_METHODS = ['qpay', 'storepay', 'toki', 'pocket', 'cash'];
 function loanPromoPercent() {
   const pct = parseInt(process.env.LOAN_PROMO_PERCENT || '10', 10);
@@ -98,7 +98,7 @@ router.post('/', requireAuth, (req, res) => {
     }
   }
 
-  // Santa Sale: Storepay / Pocket Zero → (бараа − купон)-оос нэмж хасна
+  // Santa Sale: Storepay / Pocket Zero / Toki → (бараа − купон)-оос нэмж хасна
   let loanDiscount = 0;
   const promoPct = loanPromoPercent();
   if (promoPct > 0 && LOAN_PROMO_METHODS.includes(paymentMethod)) {

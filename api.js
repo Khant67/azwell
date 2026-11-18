@@ -224,7 +224,7 @@
           <label>💳 Төлбөрийн арга *</label>
           <div class="az-loan-promo-note" id="azLoanPromoNote">
             <div class="alp-big">🎅 SANTA SALE · ЗЭЭЛЭЭР АВБАЛ <span>−10%</span></div>
-            <div class="alp-sub">Storepay эсвэл Pocket Zero сонговол бүх бараа нэмж 10% хямдарна!</div>
+            <div class="alp-sub">Storepay, Pocket Zero, Toki сонговол бүх бараа нэмж 10% хямдарна!</div>
           </div>
           <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
             <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;">
@@ -237,7 +237,7 @@
             </label>
             <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;">
               <input type="radio" name="payment_method" value="toki" style="width:auto;margin:0;">
-              <span>💼 Toki</span>
+              <span>💼 Toki</span><span class="az-loan-badge">−10%</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;">
               <input type="radio" name="payment_method" value="pocket" style="width:auto;margin:0;">
@@ -642,7 +642,7 @@
     if (pct) {
       document.querySelectorAll('.az-loan-badge, .az-loan-promo-note .alp-big span').forEach(function(b){ b.textContent = '−' + pct + '%'; });
       var sub = document.querySelector('.az-loan-promo-note .alp-sub');
-      if (sub) sub.textContent = 'Storepay эсвэл Pocket Zero сонговол бүх бараа нэмж ' + pct + '% хямдарна!';
+      if (sub) sub.textContent = 'Storepay, Pocket Zero, Toki сонговол бүх бараа нэмж ' + pct + '% хямдарна!';
       return;
     }
     var n = document.getElementById('azLoanPromoNote'); if (n) n.style.display = 'none';

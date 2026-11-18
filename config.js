@@ -6,7 +6,7 @@
 // ============================================================================
 // 🎅 SANTA SALE — зээлийн аппаар төлөхөд бүх бараа нэмж хямдрах (серверийн
 // LOAN_PROMO_PERCENT-тэй ижил байлгана. percent: 0 болговол мэдэгдэл нуугдана)
-window.AZWELL_LOAN_PROMO = { percent: 10, methods: ['storepay', 'pocket'] };
+window.AZWELL_LOAN_PROMO = { percent: 10, methods: ['storepay', 'pocket', 'toki'] };
 
 (function () {
   'use strict';
