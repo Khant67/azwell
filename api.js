@@ -53,6 +53,15 @@
 
   // ── styles ────────────────────────────────────────────────────────────────
   var STYLE = `
+    .az-loan-promo-note { background:linear-gradient(135deg,#c62828,#e53935 60%,#2e7d32); color:#fff;
+      border-radius:12px; padding:12px 14px; margin:4px 0 10px; text-align:center;
+      box-shadow:0 4px 14px rgba(198,40,40,.35); animation:azLoanPulse 1.8s ease-in-out infinite; }
+    .az-loan-promo-note .alp-big { font-size:18px; font-weight:900; letter-spacing:.3px; line-height:1.25; }
+    .az-loan-promo-note .alp-big span { background:#ffeb3b; color:#b71c1c; padding:1px 8px; border-radius:6px; margin-left:4px; }
+    .az-loan-promo-note .alp-sub { font-size:13px; font-weight:600; margin-top:4px; opacity:.95; }
+    .az-loan-badge { margin-left:auto; background:#e53935; color:#fff; font-size:11px; font-weight:900;
+      padding:2px 7px; border-radius:6px; }
+    @keyframes azLoanPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.02); } }
     .az-modal-overlay { position:fixed; inset:0; background:rgba(10,20,30,.55); z-index:5000;
       display:none; align-items:center; justify-content:center; backdrop-filter:blur(3px); }
     .az-modal-overlay.open { display:flex; }
@@ -213,6 +222,10 @@
           <label>Тэмдэглэл (нэмэлт)</label>
           <textarea name="notes" rows="3"></textarea>
           <label>💳 Төлбөрийн арга *</label>
+          <div class="az-loan-promo-note" id="azLoanPromoNote">
+            <div class="alp-big">🎅 SANTA SALE · ЗЭЭЛЭЭР АВБАЛ <span>−10%</span></div>
+            <div class="alp-sub">Storepay эсвэл Pocket Zero сонговол бүх бараа нэмж 10% хямдарна!</div>
+          </div>
           <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:8px;">
             <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;">
               <input type="radio" name="payment_method" value="qpay" checked style="width:auto;margin:0;">
@@ -220,7 +233,7 @@
             </label>
             <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;">
               <input type="radio" name="payment_method" value="storepay" style="width:auto;margin:0;">
-              <span>🏪 Storepay</span>
+              <span>🏪 Storepay</span><span class="az-loan-badge">−10%</span>
             </label>
             <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;">
               <input type="radio" name="payment_method" value="toki" style="width:auto;margin:0;">
@@ -228,7 +241,7 @@
             </label>
             <label style="display:flex;align-items:center;gap:6px;padding:10px 12px;border:2px solid #ddd;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;">
               <input type="radio" name="payment_method" value="pocket" style="width:auto;margin:0;">
-              <span>👛 Pocket Zero</span>
+              <span>👛 Pocket Zero</span><span class="az-loan-badge">−10%</span>
             </label>
           </div>
 
@@ -585,6 +598,13 @@
         '<span style="font-weight:700;">' + (i.now*i.qty).toLocaleString() + '₮</span>' +
         '</div>';
     }).join('');
+    var loanDisc = loanDiscountFor(subtotal - discount);
+    var loanLine = loanDisc > 0 ? (
+      '<div style="display:flex;justify-content:space-between;margin:4px 0;color:#c62828;">' +
+        '<span>🎅 Santa Sale — зээлийн апп (−' + loanPromo().percent + '%)</span>' +
+        '<span style="font-weight:800;">−' + loanDisc.toLocaleString() + '₮</span>' +
+      '</div>'
+    ) : '';
     var discLine = _appliedCoupon ? (
       '<div style="display:flex;justify-content:space-between;margin:4px 0;color:#1a7a3e;">' +
         '<span>🎟️ Купон (' + _appliedCoupon.code + ')</span>' +
@@ -592,11 +612,42 @@
       '</div>'
     ) : '';
     document.getElementById('azCheckoutSummary').innerHTML =
-      lines + discLine +
+      lines + discLine + loanLine +
       '<hr style="border:none;border-top:1px solid #ddd;margin:8px 0;">' +
       '<div style="display:flex;justify-content:space-between;font-weight:800;">' +
-      '<span>Нийт төлөх:</span><span style="color:#1a6e8a;">' + (subtotal - discount).toLocaleString() + '₮</span></div>';
+      '<span>Нийт төлөх:</span><span style="color:#1a6e8a;">' + (subtotal - discount - loanDisc).toLocaleString() + '₮</span></div>';
   }
+
+  // 🎅 Santa Sale helpers
+  function loanPromo() {
+    var p = window.AZWELL_LOAN_PROMO || {};
+    return { percent: p.percent || 0, methods: p.methods || [] };
+  }
+  function selectedPaymentMethod() {
+    var r = document.querySelector('#azCheckoutForm input[name=payment_method]:checked');
+    return r ? r.value : 'qpay';
+  }
+  function loanDiscountFor(amount) {
+    var p = loanPromo();
+    if (!p.percent || p.methods.indexOf(selectedPaymentMethod()) < 0) return 0;
+    return Math.round(amount * p.percent / 100);
+  }
+  document.addEventListener('change', function(e){
+    if (e.target && e.target.name === 'payment_method' && e.target.closest('#azCheckoutForm')) {
+      renderCheckoutTotals();
+    }
+  });
+  (function hidePromoIfOff(){
+    var pct = loanPromo().percent;
+    if (pct) {
+      document.querySelectorAll('.az-loan-badge, .az-loan-promo-note .alp-big span').forEach(function(b){ b.textContent = '−' + pct + '%'; });
+      var sub = document.querySelector('.az-loan-promo-note .alp-sub');
+      if (sub) sub.textContent = 'Storepay эсвэл Pocket Zero сонговол бүх бараа нэмж ' + pct + '% хямдарна!';
+      return;
+    }
+    var n = document.getElementById('azLoanPromoNote'); if (n) n.style.display = 'none';
+    document.querySelectorAll('.az-loan-badge').forEach(function(b){ b.style.display = 'none'; });
+  })();
 
   // Apply coupon button
   document.addEventListener('click', async function(e){
@@ -687,7 +738,8 @@
           items: window.cart.map(function(i){
             return { brand: i.brand, name: i.name, price: i.now, quantity: i.qty, variant: i.variant || null };
           }),
-          coupon_code: _appliedCoupon ? _appliedCoupon.code : undefined
+          coupon_code: _appliedCoupon ? _appliedCoupon.code : undefined,
+          payment_method: paymentMethod
         }
       });
 

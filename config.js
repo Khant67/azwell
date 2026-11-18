@@ -4,6 +4,10 @@
 // ❗ ВАЖНО: Railway-д backend deploy хийсний дараа доорхи URL-г өөрчилнө!
 //    Жишээ нь: 'https://azwell-backend-production.up.railway.app/api'
 // ============================================================================
+// 🎅 SANTA SALE — зээлийн аппаар төлөхөд бүх бараа нэмж хямдрах (серверийн
+// LOAN_PROMO_PERCENT-тэй ижил байлгана. percent: 0 болговол мэдэгдэл нуугдана)
+window.AZWELL_LOAN_PROMO = { percent: 10, methods: ['storepay', 'pocket'] };
+
 (function () {
   'use strict';
 

@@ -42,7 +42,7 @@ router.post('/create', (req, res) => {
     invoiceId = genInvoiceId();
     db.prepare(
       'UPDATE orders SET payment_invoice_id = ?, payment_method = ? WHERE id = ?'
-    ).run(invoiceId, 'qpay', order.id);
+    ).run(invoiceId, (order.payment_method && order.payment_method !== 'cash') ? order.payment_method : 'qpay', order.id);
   }
 
   // Build payment data

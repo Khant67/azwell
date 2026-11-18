@@ -23,12 +23,27 @@ function softAuth(req, _res, next) {
 
 const couponsRoute = require('./coupons');
 
+// ── 🎅 SANTA SALE: зээлийн аппаар төлбөл бүх бараа нэмэлт хөнгөлөлттэй ──
+//   LOAN_PROMO_PERCENT  — хувь (default 10). 0 болговол урамшуулал унтарна.
+//   LOAN_PROMO_UNTIL    — дуусах огноо, жишээ нь 2026-12-31 (заавал биш)
+const LOAN_PROMO_METHODS = ['storepay', 'pocket'];
+const VALID_PAYMENT_METHODS = ['qpay', 'storepay', 'toki', 'pocket', 'cash'];
+function loanPromoPercent() {
+  const pct = parseInt(process.env.LOAN_PROMO_PERCENT || '10', 10);
+  if (!Number.isFinite(pct) || pct <= 0 || pct > 100) return 0;
+  const until = process.env.LOAN_PROMO_UNTIL;
+  if (until && Date.now() > new Date(until + 'T23:59:59+08:00').getTime()) return 0;
+  return pct;
+}
+
 // SMS notification module
 let sms;
 try { sms = require('../sms'); } catch (_) { sms = null; }
 
 router.post('/', requireAuth, (req, res) => {
   const { customer, items, delivery_zone_id, coupon_code } = req.body || {};
+  const paymentMethod = VALID_PAYMENT_METHODS.includes(req.body && req.body.payment_method)
+    ? req.body.payment_method : 'cash';
 
   if (!customer || typeof customer !== 'object') {
     return res.status(400).json({ error: 'customer info required' });
@@ -83,7 +98,14 @@ router.post('/', requireAuth, (req, res) => {
     }
   }
 
-  const total = subtotal + deliveryFee - discount;
+  // Santa Sale: Storepay / Pocket Zero → (бараа − купон)-оос нэмж хасна
+  let loanDiscount = 0;
+  const promoPct = loanPromoPercent();
+  if (promoPct > 0 && LOAN_PROMO_METHODS.includes(paymentMethod)) {
+    loanDiscount = Math.round((subtotal - discount) * promoPct / 100);
+  }
+
+  const total = subtotal + deliveryFee - discount - loanDiscount;
 
   // Look up products by (brand, name) — case-insensitive on brand
   const productLookup = db.prepare(
@@ -108,8 +130,8 @@ router.post('/', requireAuth, (req, res) => {
   }
 
   const insertOrder = db.prepare(`
-    INSERT INTO orders (user_id, customer_name, customer_phone, customer_address, notes, total, delivery_fee, delivery_zone, coupon_code, discount)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    INSERT INTO orders (user_id, customer_name, customer_phone, customer_address, notes, total, delivery_fee, delivery_zone, coupon_code, discount, payment_method, loan_discount)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   const insertItem  = db.prepare(`
     INSERT INTO order_items (order_id, brand, product_name, price, quantity, variant)
     VALUES (?, ?, ?, ?, ?, ?)`);
@@ -123,7 +145,8 @@ router.post('/', requireAuth, (req, res) => {
     }
     const info = insertOrder.run(
       req.user ? req.user.id : null,
-      name, phone, address, notes || null, total, deliveryFee, deliveryZone, couponCode, discount
+      name, phone, address, notes || null, total, deliveryFee, deliveryZone, couponCode, discount,
+      paymentMethod, loanDiscount
     );
     const orderId = Number(info.lastInsertRowid);
     for (const it of cleanItems) {
@@ -140,7 +163,7 @@ router.post('/', requireAuth, (req, res) => {
 
   try {
     const orderId = tx();
-    res.status(201).json({ orderId, total, status: 'pending' });
+    res.status(201).json({ orderId, total, loanDiscount, paymentMethod, status: 'pending' });
 
     // Fire-and-forget SMS notifications (do not block the response)
     if (sms && sms.enabled()) {

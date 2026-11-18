@@ -832,6 +832,26 @@ html {
   box-shadow: 0 10px 28px rgba(26,171,160,.45);
 }
 
+/* 🎅 SANTA SALE — зээлийн аппын урамшууллын том зар */
+.santa-loan-bar { background:linear-gradient(90deg,#b71c1c,#e53935 45%,#c62828 55%,#1b5e20); color:#fff;
+  text-align:center; padding:14px 16px; position:relative; overflow:hidden; }
+.santa-loan-bar .slb-inner { max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; }
+.santa-loan-bar .slb-santa { font-size:40px; line-height:1; animation:slbBounce 1.6s ease-in-out infinite; }
+.santa-loan-bar .slb-title { font-size:28px; font-weight:900; letter-spacing:.5px; text-shadow:0 2px 6px rgba(0,0,0,.25); }
+.santa-loan-bar .slb-pct { display:inline-block; background:#ffeb3b; color:#b71c1c; font-size:32px; font-weight:900;
+  padding:2px 14px; border-radius:10px; margin:0 6px; box-shadow:0 3px 10px rgba(0,0,0,.25); }
+.santa-loan-bar .slb-sub { font-size:16px; font-weight:700; opacity:.97; }
+.santa-loan-bar .slb-apps { display:inline-block; background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.5);
+  padding:3px 10px; border-radius:20px; margin:0 3px; }
+@keyframes slbBounce { 0%,100% { transform:translateY(0) rotate(-6deg); } 50% { transform:translateY(-5px) rotate(6deg); } }
+@media (max-width:640px) {
+  .santa-loan-bar { padding:12px 10px; }
+  .santa-loan-bar .slb-santa { display:none; }
+  .santa-loan-bar .slb-title { font-size:20px; }
+  .santa-loan-bar .slb-pct { font-size:22px; }
+  .santa-loan-bar .slb-sub { font-size:13px; }
+}
+
 </style>
 </head>
 <body>
@@ -851,6 +871,25 @@ html {
     </div>
   </div>
 </header>
+
+<!-- 🎅 SANTA SALE: зээлийн аппаар авбал −10% -->
+<div class="santa-loan-bar" id="santaLoanBar">
+  <div class="slb-inner">
+    <div class="slb-santa">🎅</div>
+    <div>
+      <div class="slb-title">SANTA SALE · ЗЭЭЛЭЭР АВБАЛ НЭМЖ <span class="slb-pct">−10%</span></div>
+      <div class="slb-sub">Бүх бараа · <span class="slb-apps">🏪 Storepay</span><span class="slb-apps">👛 Pocket Zero</span>-оор төлөхөд автоматаар хасагдана</div>
+    </div>
+    <div class="slb-santa">🎁</div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var p = window.AZWELL_LOAN_PROMO, bar = document.getElementById('santaLoanBar');
+  if (p && p.percent === 0) { bar.style.display = 'none'; return; }
+  if (p && p.percent) bar.querySelector('.slb-pct').textContent = '−' + p.percent + '%';
+});
+</script>
 
 <!-- BRAND PILL STRIP (6 LOGOS) -->
 <div class="wrap">

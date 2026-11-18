@@ -230,6 +230,15 @@ try {
     console.log('[db] Migrated: added delivery_zone to orders');
   }
 } catch (e) { console.warn('[db] orders migration failed:', e.message); }
+
+// Migration: Santa Sale — зээлийн аппын хөнгөлөлтийг тусад нь хадгална
+try {
+  const cols = db.prepare("PRAGMA table_info(orders)").all();
+  if (!cols.some(c => c.name === 'loan_discount')) {
+    db.exec("ALTER TABLE orders ADD COLUMN loan_discount INTEGER NOT NULL DEFAULT 0");
+    console.log('[db] Migrated: added loan_discount to orders');
+  }
+} catch (e) { console.warn('[db] loan_discount migration failed:', e.message); }
 // Add 'variants' column to products if missing
 try {
   const cols = db.prepare("PRAGMA table_info(products)").all();
